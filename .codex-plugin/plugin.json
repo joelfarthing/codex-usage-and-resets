@@ -1,0 +1,36 @@
+{
+  "name": "codex-usage-and-resets",
+  "version": "0.1.0",
+  "description": "Read-only Codex capacity, pace, exhaustion, and banked-reset guidance.",
+  "author": {
+    "name": "Filament Labs"
+  },
+  "homepage": "https://github.com/joelfarthing/codex-usage-and-resets#readme",
+  "repository": "https://github.com/joelfarthing/codex-usage-and-resets",
+  "license": "Apache-2.0",
+  "keywords": [
+    "codex",
+    "usage",
+    "rate-limits",
+    "capacity-planning",
+    "reset-credits"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "CUAR",
+    "shortDescription": "Codex capacity and reset pace",
+    "longDescription": "CUAR reads current Codex rate limits and banked resets, computes linear pace and projected exhaustion deterministically, and explains the planning consequence.",
+    "developerName": "Filament Labs",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Check my Codex capacity and pace.",
+      "When will my Codex usage run out?",
+      "Show my banked resets and expirations."
+    ]
+  }
+}

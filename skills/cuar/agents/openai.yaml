@@ -1,0 +1,7 @@
+interface:
+  display_name: "CUAR"
+  short_description: "Codex capacity and reset pace"
+  default_prompt: "Use $cuar to check my current Codex pace and banked resets."
+
+policy:
+  allow_implicit_invocation: true
