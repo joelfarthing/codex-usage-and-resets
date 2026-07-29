@@ -133,7 +133,7 @@ function textReport(report) {
       );
     } else {
       lines.push(
-        "Precision: OpenAI reports usage in whole percentage points; remaining percentage is an upper bound, not an exact measurement.",
+        "Precision: Percentages are rounded, so actual remaining usage may be slightly lower.",
       );
     }
     lines.push(

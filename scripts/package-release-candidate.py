@@ -50,6 +50,7 @@ RUNTIME_FILES = (
     "scripts/lib/time.mjs",
     "skills/cuar/SKILL.md",
     "skills/cuar/agents/openai.yaml",
+    "skills/cuar/references/glossary.md",
 )
 
 EXECUTABLE_FILES = frozenset({"scripts/cuar.mjs"})

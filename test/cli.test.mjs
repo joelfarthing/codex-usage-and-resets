@@ -93,8 +93,11 @@ test("renders text from the same normalized facts", () => {
   const result = run(["report", "--text", "--timezone", "America/Chicago"]);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Weekly usage: 42% used, 58% remaining/);
-  assert.match(result.stdout, /whole percentage points/);
-  assert.match(result.stdout, /upper bound, not an exact measurement/);
+  assert.match(
+    result.stdout,
+    /Percentages are rounded, so actual remaining usage may be slightly lower/,
+  );
+  assert.doesNotMatch(result.stdout, /upper bound, not an exact measurement/);
   assert.match(result.stdout, /approximately_linear, 4.5 percentage points/);
   assert.match(
     result.stdout,
