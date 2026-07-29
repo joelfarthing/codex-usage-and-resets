@@ -126,10 +126,12 @@ test("ships a strict JSON Schema 2020-12 report definition", () => {
     "https://json-schema.org/draft/2020-12/schema",
   );
   assert.equal(schema.additionalProperties, false);
-  assert.equal(schema.properties.schema_version.const, 1);
+  assert.equal(schema.properties.schema_version.const, 2);
   assert.equal(schema.$defs.usage.additionalProperties, false);
   assert.equal(schema.$defs.percentage_precision.additionalProperties, false);
   assert.equal(schema.$defs.credit.additionalProperties, false);
+  assert.equal(schema.$defs.reset_observation.additionalProperties, false);
+  assert.equal(schema.$defs.reset_event.additionalProperties, false);
 });
 
 test("error envelopes are strict, sanitized, and unfetched", () => {
@@ -146,6 +148,7 @@ test("error envelopes are strict, sanitized, and unfetched", () => {
   assert.equal(report.fetched_at, null);
   assert.equal(report.usage, null);
   assert.equal(report.banked_resets, null);
+  assert.equal(report.reset_observation, null);
 });
 
 test("runtime validation checks complete, partial, and nested report shapes", () => {
@@ -188,6 +191,16 @@ test("runtime validation checks complete, partial, and nested report shapes", ()
     "exact";
   assert.equal(validateEnvelope(invalidPrecision), false);
   assert.equal(schemaAccepts(invalidPrecision, schema), false);
+
+  const malformedResetObservation = structuredClone(complete);
+  malformedResetObservation.reset_observation = {
+    ledger_status: "active",
+    state: "unexpected_usage_reset_observed",
+    detected_now: true,
+    latest_event: null,
+  };
+  assert.equal(validateEnvelope(malformedResetObservation), false);
+  assert.equal(schemaAccepts(malformedResetObservation, schema), true);
 
   const malformedCredit = structuredClone(complete);
   malformedCredit.banked_resets.available_count = 1;

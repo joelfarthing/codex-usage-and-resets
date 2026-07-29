@@ -11,6 +11,7 @@ import {
   jsonLine,
   validateEnvelope,
 } from "./schema.mjs";
+import { observeResetLedger } from "./reset-ledger.mjs";
 import { isoUtc, resolveTimeZone } from "./time.mjs";
 
 const HELP = `CUAR ${CUAR_VERSION}
@@ -121,28 +122,47 @@ function textReport(report) {
   if (report.usage) {
     const usage = report.usage;
     lines.push(
-      `Weekly: ${usage.window.used_percent}% used, ${usage.window.remaining_percent}% remaining`,
-    );
-    lines.push(
-      "Precision: OpenAI reports usage in whole percentage points; remaining percentage is an upper bound, not an exact measurement.",
+      `Weekly usage: ${usage.window.used_percent}% used, ${usage.window.remaining_percent}% remaining`,
     );
     if (
       usage.window.percentage_precision.remaining_capacity_state ===
       "less_than_one_percent"
     ) {
       lines.push(
-        "Urgency: Reported 1% remaining means actual remaining capacity is below 1%; exhaustion is imminent and may occur sooner than projected.",
+        "Precision: OpenAI reports usage in whole percentage points, so the reported 1% remaining means actual remaining usage is below 1%; exhaustion is imminent and may occur sooner than the projection.",
+      );
+    } else {
+      lines.push(
+        "Precision: OpenAI reports usage in whole percentage points; remaining percentage is an upper bound, not an exact measurement.",
       );
     }
     lines.push(
       `Pace: ${usage.pace.relation}, ${usage.pace.delta_percentage_points} percentage points`,
     );
+    lines.push(
+      "Linear pace means being on track to use exactly 100% at the next scheduled reset.",
+    );
+    lines.push(`Next scheduled reset: ${usage.window.resets_at_local}`);
     const projection = usage.projection;
     if (projection.exhaustion_state === "before_reset") {
       lines.push(`Projected exhaustion: ${projection.exhaustion_at_local}`);
     } else {
       lines.push(`Projected exhaustion: ${projection.exhaustion_state}`);
     }
+  }
+  const resetObservation = report.reset_observation;
+  if (resetObservation?.latest_event) {
+    const event = resetObservation.latest_event;
+    const label = resetObservation.detected_now
+      ? "Unexpected usage reset observed"
+      : "Latest unexpected usage reset observation";
+    const interpretation =
+      event.classification === "banked_reset_possible"
+        ? "banked-reset use is possible; an account switch cannot be ruled out"
+        : "consistent with a likely unscheduled reset; an account switch cannot be ruled out";
+    lines.push(
+      `${label}: by ${event.observed_at_local}, ${event.minutes_before_prior_scheduled_reset} minutes before the prior scheduled reset (${interpretation})`,
+    );
   }
   for (const limitation of report.limitations) {
     lines.push(`Limitation: ${limitation.message}`);
@@ -242,6 +262,9 @@ export async function runCli(argv, options = {}) {
       domain,
     });
     addAdapterLimitations(report, acquisition.diagnostics);
+    if (parsed.command === "report") {
+      report.reset_observation = observeResetLedger(report, { env });
+    }
     if (!validateEnvelope(report)) {
       throw new CuarError(
         "internal_error",

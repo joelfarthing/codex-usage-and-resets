@@ -98,7 +98,7 @@ test("handles zero and exhausted usage explicitly", () => {
   );
 });
 
-test("marks a reported one percent as less than one percent actual capacity", () => {
+test("marks a reported one percent as less than one percent actual usage", () => {
   const result = usage(99);
   assert.equal(result.window.remaining_percent, 1);
   assert.equal(

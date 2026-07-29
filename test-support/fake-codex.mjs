@@ -28,9 +28,19 @@ if (process.argv[2] !== "app-server" || process.argv[3] !== "--stdio") {
 }
 
 const weekly = {
-  usedPercent: mode === "one_percent_remaining" ? 99 : 42,
+  usedPercent:
+    mode === "one_percent_remaining"
+      ? 99
+      : ["unexpected_reset", "banked_reset", "scheduled_reset"].includes(mode)
+        ? 0
+        : 42,
   windowDurationMins: 10080,
-  resetsAt: 1785591000,
+  resetsAt:
+    mode === "scheduled_reset"
+      ? 1786195800
+      : ["unexpected_reset", "banked_reset"].includes(mode)
+        ? 1785821400
+        : 1785591000,
 };
 const codexBucket = {
   limitId: "codex",
@@ -60,7 +70,7 @@ const result = {
     },
   },
   rateLimitResetCredits: {
-    availableCount: 2,
+    availableCount: mode === "banked_reset" ? 1 : 2,
     credits: [
       {
         id: "opaque-fixture-id",

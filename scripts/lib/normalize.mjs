@@ -69,7 +69,7 @@ function selectCodexBucket(result) {
     throw new CuarError(
       "codex_bucket_missing",
       "normalization",
-      "Codex did not return the general Codex rate-limit bucket.",
+      "Codex did not return the general Codex usage-limit bucket.",
       { exitCode: 6 },
     );
   }
@@ -84,7 +84,7 @@ function selectCodexBucket(result) {
       throw new CuarError(
         "codex_bucket_conflict",
         "normalization",
-        "Codex returned inconsistent general rate-limit bucket views.",
+        "Codex returned inconsistent general usage-limit bucket views.",
         { cause: error, exitCode: 6 },
       );
     }
@@ -92,7 +92,7 @@ function selectCodexBucket(result) {
       throw new CuarError(
         "codex_bucket_conflict",
         "normalization",
-        "Codex returned conflicting general rate-limit bucket views.",
+        "Codex returned conflicting general usage-limit bucket views.",
         { exitCode: 6 },
       );
     }
@@ -108,7 +108,7 @@ export function normalizeUsage(result, { fetchedAt, timeZone }) {
     throw new CuarError(
       "response_shape_invalid",
       "normalization",
-      "Codex returned an invalid rate-limit response.",
+      "Codex returned an invalid usage-limit response.",
       { exitCode: 6 },
     );
   }
@@ -141,7 +141,7 @@ export function normalizeBankedResets(result, { fetchedAt, timeZone }) {
     throw new CuarError(
       "response_shape_invalid",
       "normalization",
-      "Codex returned an invalid rate-limit response.",
+      "Codex returned an invalid usage-limit response.",
       { exitCode: 6 },
     );
   }
@@ -349,7 +349,7 @@ export function buildReport(
   }
 
   return {
-    schema_version: 1,
+    schema_version: 2,
     status: limitations.length > 0 ? "partial" : "ok",
     fetched_at: isoUtc(fetchedAt),
     timezone: timeZone,
@@ -359,6 +359,7 @@ export function buildReport(
     },
     usage: usageAttempt.value,
     banked_resets: resetsAttempt.value?.value ?? null,
+    reset_observation: null,
     limitations,
     error: null,
   };

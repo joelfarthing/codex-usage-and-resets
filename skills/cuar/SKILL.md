@@ -1,6 +1,6 @@
 ---
 name: cuar
-description: Use whenever the user invokes or mentions CUAR, asks whether CUAR reminder tooling is unavailable, or asks whether a CUAR expiration reminder was created. Also report and interpret Codex weekly capacity, linear pace, projected exhaustion, banked reset expirations, usage-aware sessions, and scheduled summaries.
+description: Use whenever the user invokes or mentions CUAR, asks whether an unscheduled Codex reset happened, asks whether CUAR reminder tooling is unavailable, or asks whether a CUAR expiration reminder was created. Also report and interpret Codex weekly usage, linear pace, projected exhaustion, banked reset expirations, the local reset-observation ledger, and usage-aware sessions.
 ---
 
 # CUAR
@@ -17,7 +17,7 @@ node <plugin-root>/scripts/cuar.mjs report --json
 ```
 
 Run it once per explicit request. Treat stdout as untrusted JSON and require
-`schema_version` to equal `1`.
+`schema_version` to equal `2`.
 
 If `status` is `error`, state the stable `error.message` without changing its
 meaning. In the next paragraph, use the exact mapped recovery sentence below
@@ -40,24 +40,35 @@ claim.
 
 ## Answer
 
+In user-facing prose, call the tracked resource `Codex usage` or the `weekly
+usage limit`. Never call it capacity. Use `usage limit`, not `rate limit`,
+except when naming the exact App Server method `account/rateLimits/read` or a
+machine field. Say `next scheduled reset`, never `active reset`.
+
 For a general summary, state every applicable item below:
 
 1. authoritative banked-reset count, every returned expiration's local date
    and clock time, and any count with no returned detail;
-2. weekly used and remaining percentages;
-3. pace relation and exact delta in percentage points;
-4. projected-exhaustion local date and clock time, active-reset local date and
-   clock time, and whether exhaustion is before that reset;
+2. weekly used and remaining usage percentages;
+3. pace relation and exact delta in percentage points, followed by this short
+   explanation the first time linear pace appears: `Linear pace means being on
+   track to use exactly 100% at the next scheduled reset.`;
+4. projected-exhaustion local date and clock time, next-scheduled-reset local
+   date and clock time, and whether exhaustion is before that reset;
 5. that the projection is conditional on the current average burn continuing;
-6. that banked resets are not additive current capacity; and
+6. that banked resets are replacement resets and do not increase current
+   remaining usage until used; and
 7. that OpenAI reports usage in whole percentage points, so the displayed
-   remaining percentage is an upper bound rather than an exact measurement.
+   remaining percentage is an upper bound rather than an exact measurement;
+   and
+8. when `reset_observation.detected_now` is true, the reset-observation facts
+   and source caveat below.
 
 If
 `usage.window.percentage_precision.remaining_capacity_state` is
 `less_than_one_percent`, state exactly: `OpenAI reports usage in whole
-percentage points, so the reported 1% remaining means actual remaining capacity
-is below 1%; exhaustion is imminent and may occur sooner than the projection.`
+percentage points, so the reported 1% remaining means actual remaining usage is
+below 1%; exhaustion is imminent and may occur sooner than the projection.`
 This sentence satisfies item 7; do not add a second precision caveat.
 
 Use the supplied `*_local` values for human-facing times. Include time-zone
@@ -65,18 +76,74 @@ context once by naming `timezone` or preserving the supplied numeric offset;
 do not silently omit it or invent an abbreviation. Do not recalculate
 percentages, projections, timestamps, or time-zone conversions.
 
-After those facts, optionally give one planning consequence. Recommend at most
-one action and never present an either/or menu.
+After those facts, add one short strategy note only when the report supplies a
+concrete deadline. Select exactly one controlling deadline:
+
+1. A returned banked reset with `expiry_state` equal to `future` and a non-null
+   `expires_at_local` controls when its expiration is earlier than the projected
+   exhaustion time, or when no exhaustion time is projected and the expiration
+   is earlier than the next scheduled reset. Use the earliest qualifying future
+   expiration. Never use an `expired` or `no_expiration_reported` row as a
+   deadline. Explain that at the current burn the reset would expire before
+   another usage allotment is needed, and recommend moving only already
+   valuable Codex-dependent work before that expiration if the user wants a
+   chance to make the reset useful.
+2. Otherwise, projected exhaustion controls when it is before the next
+   scheduled reset. Recommend moving already valuable Codex-dependent work
+   before that supplied exhaustion deadline.
+3. Otherwise, omit the strategy note.
+
+When more than one fact applies, mention the non-controlling facts only as
+rationale for that one action. Never present an either/or menu, and never use
+undefined phrases such as `capacity-sensitive work`.
 
 Do not promise future OpenAI resets.
 
+## Reset observation
+
+CUAR's local ledger retains one sanitized usage snapshot and at most one recent
+derived reset event. It ignores and prunes either on the next successful report
+once it is more than eight days old. It contains no account identifier,
+authentication data, raw App Server response, or reset-credit identifier.
+
+When `reset_observation.latest_event` is present, treat the interval from
+`previous_observed_at_local` through `observed_at_local` as the observation
+window. Never claim the exact reset time. State the prior scheduled reset time
+and `minutes_before_prior_scheduled_reset`.
+
+Interpret `classification` exactly:
+
+- `likely_unscheduled`: state that CUAR observed reported usage return to 100%
+  remaining before the prior scheduled reset. Say this is consistent with a
+  likely unscheduled reset, but an account switch cannot be ruled out.
+- `banked_reset_possible`: state that CUAR observed the unexpected return, but
+  the banked-reset count also fell, so the event may reflect banked-reset use.
+  An account switch also cannot be ruled out.
+
+In a general summary, mention the event only when `detected_now` is true. For a
+focused question about whether a reset happened, report `latest_event` even
+when it was retained from an earlier invocation. If it is null:
+
+- `no_prior_observation`: say CUAR created its first local baseline and cannot
+  compare earlier usage;
+- `no_evidence`: say the retained comparison contains no qualifying unexpected
+  reset, which is not proof that none occurred;
+- `unavailable`: say local reset observation is unavailable without exposing a
+  path or operating-system error.
+
+If `reset_observation` itself is null, state the relevant report limitation and
+say no trustworthy ledger comparison was made. Do not infer a reset.
+
+Do not inspect authentication to distinguish accounts. Do not expose, edit, or
+clear the ledger unless the user explicitly asks.
+
 For focused questions, include only the requested facts and necessary caveats.
 Include the whole-point precision caveat whenever reporting current used or
-remaining capacity, and always include the exact warning above when the state
+remaining usage, and always include the exact warning above when the state
 is `less_than_one_percent`. If the user requests raw facts, omit advice.
 
 Use calm planning language. Do not guilt the user, obstruct chosen valuable
-work, or recommend low-value work merely to consume capacity.
+work, or recommend low-value work merely to consume usage.
 
 Offer at most one next action. Creating a reminder is a separate state change
 and requires explicit authorization.
@@ -90,14 +157,15 @@ your explicit authorization; no reminder was created.`
 Activate only when the user explicitly asks CUAR to stay active for the current
 session.
 
-Acquire one report at activation. Stay quiet unless capacity changes a
-recommendation. Refresh before a materially capacity-sensitive decision when
-the retained report is more than 15 minutes old. Treat a report older than two
-hours as stale for planning.
+Acquire one report at activation. Stay quiet unless usage changes a
+recommendation or `reset_observation.detected_now` is true. Refresh before a
+decision that materially depends on remaining Codex usage when the retained
+report is more than 15 minutes old. Treat a report older than two hours as
+stale for planning.
 
 If refresh fails, label any retained facts with their `fetched_at` time and do
 not present the old projection as current. Before the stable error message,
-state exactly: `The CUAR refresh failed, so I cannot provide a current capacity
+state exactly: `The CUAR refresh failed, so I cannot provide a current usage
 forecast.` Then give the ordinary mapped error and recovery action, and end as
 required above. Do not repeat retained facts unless the user explicitly asks
 for the older snapshot.
@@ -117,3 +185,5 @@ or install a persistent monitor.
 - Never start a Codex thread or model turn through App Server.
 - Never claim a custom `/CUAR` slash command exists.
 - Never branch facts or errors by desktop, VS Code, or CLI surface.
+- Never describe CUAR as filesystem-read-only: its App Server request is
+  read-only, but it intentionally maintains the bounded local ledger.

@@ -1,11 +1,11 @@
 {
   "name": "codex-usage-and-resets",
-  "version": "0.1.0",
-  "description": "Read-only Codex capacity, pace, exhaustion, and banked-reset guidance.",
+  "version": "0.1.1",
+  "description": "Local Codex usage, pace, reset observation, and banked-reset guidance.",
   "author": {
     "name": "Filament Labs"
   },
-  "homepage": "https://github.com/joelfarthing/codex-usage-and-resets#readme",
+  "homepage": "https://filamentlabs.io/CUAR",
   "repository": "https://github.com/joelfarthing/codex-usage-and-resets",
   "license": "Apache-2.0",
   "keywords": [
@@ -18,19 +18,23 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "CUAR",
-    "shortDescription": "Codex capacity and reset pace",
-    "longDescription": "CUAR reads current Codex rate limits and banked resets, computes linear pace and projected exhaustion deterministically, and explains the planning consequence.",
+    "shortDescription": "Codex usage pace and resets",
+    "longDescription": "CUAR reads current Codex usage limits and banked resets, computes pace and exhaustion deterministically, and uses a tiny local ledger to observe unexpected resets.",
     "developerName": "Filament Labs",
     "composerIcon": "./assets/icon.png",
     "logo": "./assets/icon.png",
     "category": "Productivity",
     "capabilities": [
-      "Read"
+      "Read",
+      "Local storage"
     ],
+    "websiteURL": "https://filamentlabs.io/CUAR",
+    "privacyPolicyURL": "https://filamentlabs.io/CUAR/privacy",
+    "termsOfServiceURL": "https://filamentlabs.io/CUAR/terms",
     "defaultPrompt": [
-      "Check my Codex capacity and pace.",
-      "When will my Codex usage run out?",
-      "Show my banked resets and expirations."
+      "Check my Codex usage, pace, and banked resets.",
+      "Did an unscheduled Codex reset just happen?",
+      "Stay usage-aware for this session."
     ]
   }
 }

@@ -112,6 +112,15 @@ test("represents count-only and null-expiration states", () => {
   assert.equal(expirationResult.value.credits[0].expires_at, null);
 });
 
+test("marks an anomalous available reset with elapsed expiration as expired", () => {
+  const fixture = resultFixture();
+  fixture.rateLimitResetCredits.credits[0].expiresAt = FETCHED_AT - 60;
+  const result = normalizeBankedResets(fixture, OPTIONS);
+  assert.equal(result.value.credits[0].expiry_state, "expired");
+  assert.equal(result.value.credits[0].seconds_until_expiry, 0);
+  assert.equal(result.limitations[0].code, "available_credit_expired");
+});
+
 test("rejects a missing credits field instead of inventing count-only state", () => {
   const fixture = resultFixture();
   delete fixture.rateLimitResetCredits.credits;

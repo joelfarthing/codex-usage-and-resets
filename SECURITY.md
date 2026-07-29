@@ -17,13 +17,26 @@ The normal runtime resolves `codex` through the inherited `PATH`, starts
 and sends only `account/rateLimits/read`. It does not send thread, turn, login,
 logout, write, nudge, or reset-consumption methods.
 
+CUAR writes only its bounded local reset ledger. It creates the ledger
+directory with user-only permissions when possible, writes the file with mode
+`0600`, uses a same-directory temporary file and atomic rename, and serializes
+cooperating CUAR processes with a short-lived directory lock. Symlinked ledger,
+lock, and final cache-directory paths are rejected. The ledger is derived
+cache data, not an authentication or account-identity boundary. CUAR uses only
+one fixed-name temporary file, removes interrupted temporary writes before the
+next transaction, and invalidates its comparison chain after an untrustworthy
+report.
+
 `CUAR_CODEX_BIN` is an explicit support-and-test override. Setting it delegates
 the same trust to that absolute executable path, so users should not point it
 to untrusted code.
 
 `CUAR_TEST_MODE=1` enables the fixture-only `CUAR_TEST_FETCHED_AT` clock
 override. These variables can deliberately make a report non-current and must
-not be enabled for ordinary use. CUAR's bundled skill never sets them.
+not be enabled for ordinary use. `CUAR_LEDGER_PATH` is an absolute-path
+support-and-test override; in test mode, ledger writes are disabled unless that
+override is explicitly supplied. CUAR's bundled skill never sets these
+variables.
 
 App Server stdout is treated as untrusted structured input. JSONL lines,
 stderr, timeouts, response envelopes, and child cleanup are bounded. Raw
@@ -35,6 +48,8 @@ responses and operating-system errors are not copied into public CUAR output.
   environment variables, or local Codex state.
 - CUAR projections assume the current average burn continues; they are
   planning estimates, not guarantees.
+- Reset observation cannot distinguish every unscheduled OpenAI reset from an
+  account switch or coincident banked-reset change.
 - OpenAI may change supported App Server behavior independently of CUAR.
 - The initial release targets local Codex surfaces with Node.js and shell
   execution available; it does not claim ChatGPT web-only support.
