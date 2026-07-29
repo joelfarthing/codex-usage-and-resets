@@ -67,7 +67,7 @@ function rpcError(message, stage) {
     return new CuarError(
       "method_unavailable",
       stage,
-      "This Codex installation does not provide the required rate-limit method.",
+      "This Codex installation does not provide the required usage-limit method.",
       { exitCode: 4 },
     );
   }
@@ -89,7 +89,7 @@ function rpcError(message, stage) {
     return new CuarError(
       "auth_mode_unsupported",
       "authentication",
-      "The active Codex authentication mode does not provide ChatGPT rate limits.",
+      "The active Codex authentication mode does not provide ChatGPT usage-limit data.",
       { exitCode: 5 },
     );
   }
@@ -97,7 +97,7 @@ function rpcError(message, stage) {
     return new CuarError(
       "access_denied",
       "authentication",
-      "Codex denied access to the current account's rate limits.",
+      "Codex denied access to the current account's usage-limit data.",
       { exitCode: 5 },
     );
   }
@@ -106,7 +106,7 @@ function rpcError(message, stage) {
     stage,
     stage === "initialize"
       ? "Codex App Server rejected CUAR initialization."
-      : "Codex App Server rejected the rate-limit request.",
+      : "Codex App Server rejected the usage-limit request.",
     { exitCode: 4, retryable: true },
   );
 }
@@ -115,7 +115,7 @@ function cancellationError() {
   return new CuarError(
     "operation_cancelled",
     "app_server",
-    "The CUAR rate-limit read was cancelled.",
+    "The CUAR usage-limit read was cancelled.",
     { exitCode: 4, retryable: true },
   );
 }
@@ -458,7 +458,7 @@ export async function readRateLimits(options = {}) {
             clientInfo: {
               name: "cuar",
               title: "Codex Usage and Resets",
-              version: "0.1.0",
+              version: "0.1.1",
             },
           },
         },
@@ -482,7 +482,7 @@ export async function readRateLimits(options = {}) {
       2,
       remainingMs,
       "response_timeout",
-      "Codex App Server did not return rate limits in time.",
+      "Codex App Server did not return usage-limit data in time.",
     );
     const responseMessage = await sendAndWait(
       [
@@ -497,7 +497,7 @@ export async function readRateLimits(options = {}) {
       throw new CuarError(
         "malformed_rpc",
         "rate_limits",
-        "Codex App Server returned an invalid rate-limit response.",
+        "Codex App Server returned an invalid usage-limit response.",
         { exitCode: 4, retryable: true },
       );
     }

@@ -60,6 +60,7 @@ test("release-candidate package is deterministic and strictly allowlisted", () =
       "assets/icon.png",
       "schema/report.schema.json",
       "scripts/cuar.mjs",
+      "scripts/lib/reset-ledger.mjs",
       "skills/cuar/SKILL.md",
       "skills/cuar/agents/openai.yaml",
     ]) {
@@ -119,7 +120,30 @@ test("release-candidate package is deterministic and strictly allowlisted", () =
     assert.ok(packagedManifest.interface.shortDescription.length <= 30);
     assert.ok(packagedManifest.interface.longDescription.length <= 4000);
     assert.ok(packagedManifest.interface.developerName.length <= 80);
-    assert.deepEqual(packagedManifest.interface.capabilities, ["Read"]);
+    assert.deepEqual(packagedManifest.interface.capabilities, [
+      "Read",
+      "Local storage",
+    ]);
+    assert.equal(
+      packagedManifest.homepage,
+      "https://filamentlabs.io/CUAR",
+    );
+    assert.equal(
+      packagedManifest.repository,
+      "https://github.com/joelfarthing/codex-usage-and-resets",
+    );
+    assert.equal(
+      packagedManifest.interface.websiteURL,
+      "https://filamentlabs.io/CUAR",
+    );
+    assert.equal(
+      packagedManifest.interface.privacyPolicyURL,
+      "https://filamentlabs.io/CUAR/privacy",
+    );
+    assert.equal(
+      packagedManifest.interface.termsOfServiceURL,
+      "https://filamentlabs.io/CUAR/terms",
+    );
     assert.equal(
       packagedManifest.interface.composerIcon,
       "./assets/icon.png",
@@ -173,7 +197,7 @@ test("release-candidate package is deterministic and strictly allowlisted", () =
     );
     assert.equal(smoke.status, 0, smoke.stderr || smoke.stdout);
     const report = JSON.parse(smoke.stdout);
-    assert.equal(report.schema_version, 1);
+    assert.equal(report.schema_version, 2);
     assert.equal(report.source.method, "account/rateLimits/read");
     assert.equal(report.usage.limit_id, "codex");
     assert.equal(report.banked_resets.available_count, 2);

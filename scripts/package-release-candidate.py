@@ -45,6 +45,7 @@ RUNTIME_FILES = (
     "scripts/lib/cli.mjs",
     "scripts/lib/errors.mjs",
     "scripts/lib/normalize.mjs",
+    "scripts/lib/reset-ledger.mjs",
     "scripts/lib/schema.mjs",
     "scripts/lib/time.mjs",
     "skills/cuar/SKILL.md",
@@ -113,6 +114,20 @@ def validate_metadata() -> str:
 
     if plugin.get("license") != "Apache-2.0":
         raise ValueError("plugin license must be Apache-2.0")
+    if plugin.get("homepage") != "https://filamentlabs.io/CUAR":
+        raise ValueError("plugin homepage must be the canonical CUAR website")
+    if plugin.get("repository") != (
+        "https://github.com/joelfarthing/codex-usage-and-resets"
+    ):
+        raise ValueError("plugin repository must be the public CUAR source")
+    if plugin.get("keywords") != [
+        "codex",
+        "usage",
+        "rate-limits",
+        "capacity-planning",
+        "reset-credits",
+    ]:
+        raise ValueError("plugin keywords must match the reviewed discovery set")
     if plugin.get("skills") != "./skills/":
         raise ValueError("plugin skills path must be './skills/'")
     for forbidden_component in ("apps", "hooks", "mcpServers"):
@@ -126,8 +141,10 @@ def validate_metadata() -> str:
         raise ValueError("plugin manifest must contain interface metadata")
     if interface.get("category") != "Productivity":
         raise ValueError("plugin category must be 'Productivity'")
-    if interface.get("capabilities") != ["Read"]:
-        raise ValueError("plugin capabilities must be exactly ['Read']")
+    if interface.get("capabilities") != ["Read", "Local storage"]:
+        raise ValueError(
+            "plugin capabilities must be exactly ['Read', 'Local storage']"
+        )
     validate_bounded_line(interface, "displayName", 30)
     validate_bounded_line(interface, "shortDescription", 30)
     validate_bounded_line(interface, "longDescription", 4000)
@@ -147,6 +164,13 @@ def validate_metadata() -> str:
         raise ValueError("plugin composerIcon must be './assets/icon.png'")
     if interface.get("logo") != "./assets/icon.png":
         raise ValueError("plugin logo must be './assets/icon.png'")
+    expected_urls = {
+        "websiteURL": "https://filamentlabs.io/CUAR",
+        "privacyPolicyURL": "https://filamentlabs.io/CUAR/privacy",
+        "termsOfServiceURL": "https://filamentlabs.io/CUAR/terms",
+    }
+    if any(interface.get(field) != value for field, value in expected_urls.items()):
+        raise ValueError("plugin interface URLs must match the canonical CUAR pages")
     validate_icon(ROOT / "assets/icon.png")
 
     for field in (

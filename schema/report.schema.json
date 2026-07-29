@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "CUAR report schema version 1",
+  "title": "CUAR report schema version 2",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -11,12 +11,13 @@
     "source",
     "usage",
     "banked_resets",
+    "reset_observation",
     "limitations",
     "error"
   ],
   "properties": {
     "schema_version": {
-      "const": 1
+      "const": 2
     },
     "status": {
       "enum": [
@@ -66,6 +67,16 @@
       "anyOf": [
         {
           "$ref": "#/$defs/banked_resets"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reset_observation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/reset_observation"
         },
         {
           "type": "null"
@@ -396,6 +407,96 @@
             "null"
           ],
           "minimum": 0
+        }
+      }
+    },
+    "reset_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ledger_status",
+        "state",
+        "detected_now",
+        "latest_event"
+      ],
+      "properties": {
+        "ledger_status": {
+          "enum": [
+            "active",
+            "disabled_test_mode",
+            "unavailable"
+          ]
+        },
+        "state": {
+          "enum": [
+            "no_prior_observation",
+            "no_evidence",
+            "unexpected_usage_reset_observed",
+            "unavailable"
+          ]
+        },
+        "detected_now": {
+          "type": "boolean"
+        },
+        "latest_event": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/reset_event"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "reset_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observed_at",
+        "observed_at_local",
+        "previous_observed_at",
+        "previous_observed_at_local",
+        "prior_scheduled_reset_at",
+        "prior_scheduled_reset_at_local",
+        "minutes_before_prior_scheduled_reset",
+        "classification"
+      ],
+      "properties": {
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "observed_at_local": {
+          "type": "string",
+          "minLength": 1
+        },
+        "previous_observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "previous_observed_at_local": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prior_scheduled_reset_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "prior_scheduled_reset_at_local": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minutes_before_prior_scheduled_reset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "classification": {
+          "enum": [
+            "likely_unscheduled",
+            "banked_reset_possible"
+          ]
         }
       }
     }

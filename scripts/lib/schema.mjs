@@ -1,8 +1,8 @@
 import { asCuarError } from "./errors.mjs";
 import { isoUtc } from "./time.mjs";
 
-export const SCHEMA_VERSION = 1;
-export const CUAR_VERSION = "0.1.0";
+export const SCHEMA_VERSION = 2;
+export const CUAR_VERSION = "0.1.1";
 
 export function errorEnvelope(error, { timeZone, fetchedAt = null }) {
   const normalized = asCuarError(error);
@@ -17,6 +17,7 @@ export function errorEnvelope(error, { timeZone, fetchedAt = null }) {
     },
     usage: null,
     banked_resets: null,
+    reset_observation: null,
     limitations: [],
     error: {
       code: normalized.code,
@@ -218,6 +219,62 @@ function validateBankedResets(value) {
   );
 }
 
+function validateResetEvent(value) {
+  return (
+    hasExactKeys(value, [
+      "observed_at",
+      "observed_at_local",
+      "previous_observed_at",
+      "previous_observed_at_local",
+      "prior_scheduled_reset_at",
+      "prior_scheduled_reset_at_local",
+      "minutes_before_prior_scheduled_reset",
+      "classification",
+    ]) &&
+    isTimestamp(value.observed_at) &&
+    typeof value.observed_at_local === "string" &&
+    isTimestamp(value.previous_observed_at) &&
+    typeof value.previous_observed_at_local === "string" &&
+    isTimestamp(value.prior_scheduled_reset_at) &&
+    typeof value.prior_scheduled_reset_at_local === "string" &&
+    Number.isSafeInteger(value.minutes_before_prior_scheduled_reset) &&
+    value.minutes_before_prior_scheduled_reset >= 0 &&
+    ["likely_unscheduled", "banked_reset_possible"].includes(
+      value.classification,
+    )
+  );
+}
+
+function validateResetObservation(value) {
+  return (
+    hasExactKeys(value, [
+      "ledger_status",
+      "state",
+      "detected_now",
+      "latest_event",
+    ]) &&
+    ["active", "disabled_test_mode", "unavailable"].includes(
+      value.ledger_status,
+    ) &&
+    [
+      "no_prior_observation",
+      "no_evidence",
+      "unexpected_usage_reset_observed",
+      "unavailable",
+    ].includes(value.state) &&
+    typeof value.detected_now === "boolean" &&
+    (value.latest_event === null || validateResetEvent(value.latest_event)) &&
+    (value.detected_now === false || value.latest_event !== null) &&
+    (value.detected_now ===
+      (value.state === "unexpected_usage_reset_observed")) &&
+    (value.ledger_status === "active"
+      ? value.state !== "unavailable"
+      : value.state === "unavailable" &&
+        value.detected_now === false &&
+        value.latest_event === null)
+  );
+}
+
 export function validateEnvelope(value) {
   const expectedKeys = [
     "schema_version",
@@ -227,6 +284,7 @@ export function validateEnvelope(value) {
     "source",
     "usage",
     "banked_resets",
+    "reset_observation",
     "limitations",
     "error",
   ];
@@ -252,6 +310,7 @@ export function validateEnvelope(value) {
       isNullableTimestamp(value.fetched_at) &&
       value.usage === null &&
       value.banked_resets === null &&
+      value.reset_observation === null &&
       validateError(value.error)
     );
   }
@@ -260,6 +319,8 @@ export function validateEnvelope(value) {
     (value.usage === null || validateUsage(value.usage)) &&
     (value.banked_resets === null ||
       validateBankedResets(value.banked_resets)) &&
+    (value.reset_observation === null ||
+      validateResetObservation(value.reset_observation)) &&
     (value.usage !== null || value.banked_resets !== null) &&
     value.error === null
   );
