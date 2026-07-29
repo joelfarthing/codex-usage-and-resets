@@ -49,6 +49,12 @@ test("ships only declared local plugin components", () => {
     fs.existsSync(path.join(ROOT, "schema", "report.schema.json")),
     true,
   );
+  assert.equal(
+    fs.existsSync(
+      path.join(ROOT, "skills", "cuar", "references", "glossary.md"),
+    ),
+    true,
+  );
   assert.equal(fs.existsSync(path.join(ROOT, "assets", "icon.png")), true);
 });
 
@@ -90,7 +96,10 @@ test("skill interprets the local reset ledger conservatively", () => {
   for (const [label, pattern] of [
     ["schema version", /`schema_version` to equal `2`/],
     ["bounded ledger", /one sanitized usage snapshot and at most one recent\s+derived reset event/],
-    ["eight-day retention", /prunes either on the next successful report\s+once it is more than eight days old/],
+    [
+      "eight-day retention",
+      /On each successful report, it prunes any retained snapshot\s+or event more than eight days old/,
+    ],
     ["observation window", /interval from\s+`previous_observed_at_local` through `observed_at_local`/],
     ["no exact reset time", /Never claim the exact reset time/],
     ["likely reset caveat", /an account switch cannot be ruled out/],
@@ -118,21 +127,52 @@ test("skill requires every normal-summary fact and caveat", () => {
       "replacement resets",
       /banked resets are replacement resets and do not increase current\s+remaining usage until used/,
     ],
-    ["whole-point source", /OpenAI reports usage in whole percentage points/],
-    ["remaining upper bound", /remaining percentage is an upper bound/],
+    ["rounded percentages", /percentages are rounded/],
+    [
+      "slightly lower remaining usage",
+      /actual remaining usage may\s+be slightly lower/,
+    ],
+    [
+      "upper-bound detail only on request",
+      /do not explain upper-bound mechanics unless the user\s+asks/,
+    ],
     [
       "linear pace meaning",
-      /Linear pace means being on\s+track to use exactly 100% at the next scheduled reset/,
+      /represents using the weekly allotment\s+evenly enough to reach 100% at the next scheduled reset/,
+    ],
+    [
+      "natural linear-pace explanation",
+      /Phrase this\s+explanation naturally/,
+    ],
+    [
+      "neutral linear-pace framing",
+      /do not frame being ahead or behind pace as\s+inherently good or bad/,
     ],
     ["one-percent state", /less_than_one_percent/],
+    [
+      "one-percent rounding consequence",
+      /whole-percentage rounding means\s+less than 1% actually remains/,
+    ],
     ["one-percent urgency", /exhaustion is imminent/],
-    ["projection uncertainty", /may occur sooner than the projection/],
+    ["projection uncertainty", /may occur\s+sooner than projected/],
+    [
+      "concise natural one-percent warning",
+      /Phrase this naturally in one concise warning/,
+    ],
     ["time-zone context", /Include time-zone\s+context once/],
     ["one action", /Select exactly one controlling deadline/],
     ["no action menu", /Never present an either\/or menu/],
     [
-      "exhaustion deadline strategy",
-      /moving already valuable Codex-dependent work\s+before that supplied exhaustion deadline/,
+      "exhaustion priority meaning",
+      /important work requiring Codex before that\s+reset should be prioritized while usage remains/,
+    ],
+    [
+      "natural exhaustion strategy",
+      /Phrase the recommendation\s+naturally/,
+    ],
+    [
+      "ambiguous exhaustion wording ban",
+      /Do not describe this as moving work before the exhaustion\s+deadline/,
     ],
     [
       "expiring reset priority",
@@ -143,13 +183,78 @@ test("skill requires every normal-summary fact and caveat", () => {
       /Never use an `expired` or `no_expiration_reported` row as a\s+deadline/,
     ],
     [
-      "expiring reset strategy",
-      /moving only\s+already\s+valuable Codex-dependent work before that expiration/,
+      "expiring reset merit test",
+      /Codex-intensive\s+work that is worth attempting on its own merits, including exploratory work\s+whose payoff is uncertain/,
+    ],
+    [
+      "expiring reset redemption objective",
+      /exhaust\s+current usage and redeem the banked reset before expiration/,
+    ],
+    [
+      "usage-only activity exclusion",
+      /Do not\s+recommend activity whose only purpose is consuming usage/,
     ],
     ["undefined strategy ban", /never use\s+undefined phrases such as `capacity-sensitive work`/i],
   ]) {
     assert.match(skill, pattern, `missing skill contract: ${label}`);
   }
+  assert.doesNotMatch(
+    skill,
+    /Recommend moving already valuable Codex-dependent work\s+before that supplied exhaustion deadline/,
+    "obsolete exhaustion strategy instruction remains",
+  );
+  assert.doesNotMatch(
+    skill,
+    /moving only\s+already\s+valuable Codex-dependent work before that expiration/,
+    "obsolete expiring-reset strategy instruction remains",
+  );
+  assert.doesNotMatch(
+    skill,
+    /`less_than_one_percent`, state exactly:/,
+    "one-percent warning remains hard-coded",
+  );
+  assert.doesNotMatch(
+    skill,
+    /Linear pace means being on\s+track to use exactly 100% at the next scheduled reset/,
+    "linear-pace explanation remains hard-coded",
+  );
+});
+
+test("skill ships the approved CUAR-defined glossary", () => {
+  const skill = fs.readFileSync(
+    path.join(ROOT, "skills", "cuar", "SKILL.md"),
+    "utf8",
+  );
+  const glossary = fs.readFileSync(
+    path.join(ROOT, "skills", "cuar", "references", "glossary.md"),
+    "utf8",
+  );
+
+  assert.match(skill, /read\s+`references\/glossary\.md`/);
+  assert.match(skill, /CUAR-defined terms rather than\s+official OpenAI terminology/);
+
+  for (const term of [
+    "Scheduled Reset",
+    "Unscheduled Reset",
+    "Banked Reset",
+    "Banked Reset Expiration",
+    "Linear Pace",
+    "Projected Exhaustion",
+  ]) {
+    assert.match(glossary, new RegExp(`^## ${term}$`, "m"));
+  }
+
+  assert.equal(
+    glossary.match(/OpenAI may change this observed behavior without notice\./g)
+      ?.length,
+    6,
+  );
+  assert.match(glossary, /viewable in ChatGPT\/Codex settings/);
+  assert.match(glossary, /without\s+redeeming a Banked Reset/);
+  assert.match(glossary, /sets a new Scheduled Reset exactly seven days later/);
+  assert.match(glossary, /does not add percentage to the existing allotment/);
+  assert.match(glossary, /merely a forecast based on current pace/);
+  assert.match(glossary, /Expiration does not itself restore usage/);
 });
 
 test("skill requires one low-freedom recovery action for errors", () => {

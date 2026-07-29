@@ -43,33 +43,42 @@ claim.
 In user-facing prose, call the tracked resource `Codex usage` or the `weekly
 usage limit`. Never call it capacity. Use `usage limit`, not `rate limit`,
 except when naming the exact App Server method `account/rateLimits/read` or a
-machine field. Say `next scheduled reset`, never `active reset`.
+machine field. Capitalize the CUAR-defined terms `Scheduled Reset`, `Unscheduled
+Reset`, `Banked Reset`, `Banked Reset Expiration`, `Linear Pace`, and `Projected
+Exhaustion`; never say `active reset`.
+
+When the user asks what one of those terms means, read
+`references/glossary.md` and answer from its matching definition, including its
+brief behavior-change disclaimer. Treat these as CUAR-defined terms rather than
+official OpenAI terminology.
 
 For a general summary, state every applicable item below:
 
 1. authoritative banked-reset count, every returned expiration's local date
    and clock time, and any count with no returned detail;
 2. weekly used and remaining usage percentages;
-3. pace relation and exact delta in percentage points, followed by this short
-   explanation the first time linear pace appears: `Linear pace means being on
-   track to use exactly 100% at the next scheduled reset.`;
+3. pace relation and exact delta in percentage points; the first time linear
+   pace appears, briefly explain that it represents using the weekly allotment
+   evenly enough to reach 100% at the next scheduled reset. Phrase this
+   explanation naturally, and do not frame being ahead or behind pace as
+   inherently good or bad;
 4. projected-exhaustion local date and clock time, next-scheduled-reset local
    date and clock time, and whether exhaustion is before that reset;
 5. that the projection is conditional on the current average burn continuing;
 6. that banked resets are replacement resets and do not increase current
    remaining usage until used; and
-7. that OpenAI reports usage in whole percentage points, so the displayed
-   remaining percentage is an upper bound rather than an exact measurement;
-   and
+7. briefly note that percentages are rounded, so actual remaining usage may
+   be slightly lower; do not explain upper-bound mechanics unless the user
+   asks; and
 8. when `reset_observation.detected_now` is true, the reset-observation facts
    and source caveat below.
 
 If
 `usage.window.percentage_precision.remaining_capacity_state` is
-`less_than_one_percent`, state exactly: `OpenAI reports usage in whole
-percentage points, so the reported 1% remaining means actual remaining usage is
-below 1%; exhaustion is imminent and may occur sooner than the projection.`
-This sentence satisfies item 7; do not add a second precision caveat.
+`less_than_one_percent`, briefly explain that whole-percentage rounding means
+less than 1% actually remains. Warn that exhaustion is imminent and may occur
+sooner than projected. Phrase this naturally in one concise warning. This
+satisfies item 7; do not add a second precision caveat.
 
 Use the supplied `*_local` values for human-facing times. Include time-zone
 context once by naming `timezone` or preserving the supplied numeric offset;
@@ -85,12 +94,16 @@ concrete deadline. Select exactly one controlling deadline:
    is earlier than the next scheduled reset. Use the earliest qualifying future
    expiration. Never use an `expired` or `no_expiration_reported` row as a
    deadline. Explain that at the current burn the reset would expire before
-   another usage allotment is needed, and recommend moving only already
-   valuable Codex-dependent work before that expiration if the user wants a
-   chance to make the reset useful.
+   current weekly usage is exhausted. Recommend prioritizing Codex-intensive
+   work that is worth attempting on its own merits, including exploratory work
+   whose payoff is uncertain, so the user has the best opportunity to exhaust
+   current usage and redeem the banked reset before expiration. Do not
+   recommend activity whose only purpose is consuming usage.
 2. Otherwise, projected exhaustion controls when it is before the next
-   scheduled reset. Recommend moving already valuable Codex-dependent work
-   before that supplied exhaustion deadline.
+   scheduled reset. Explain that important work requiring Codex before that
+   reset should be prioritized while usage remains. Phrase the recommendation
+   naturally. Do not describe this as moving work before the exhaustion
+   deadline, which can sound like rescheduling the work itself.
 3. Otherwise, omit the strategy note.
 
 When more than one fact applies, mention the non-controlling facts only as
@@ -102,8 +115,8 @@ Do not promise future OpenAI resets.
 ## Reset observation
 
 CUAR's local ledger retains one sanitized usage snapshot and at most one recent
-derived reset event. It ignores and prunes either on the next successful report
-once it is more than eight days old. It contains no account identifier,
+derived reset event. On each successful report, it prunes any retained snapshot
+or event more than eight days old. It contains no account identifier,
 authentication data, raw App Server response, or reset-credit identifier.
 
 When `reset_observation.latest_event` is present, treat the interval from
@@ -138,9 +151,9 @@ Do not inspect authentication to distinguish accounts. Do not expose, edit, or
 clear the ledger unless the user explicitly asks.
 
 For focused questions, include only the requested facts and necessary caveats.
-Include the whole-point precision caveat whenever reporting current used or
-remaining usage, and always include the exact warning above when the state
-is `less_than_one_percent`. If the user requests raw facts, omit advice.
+Include the brief rounding caveat whenever reporting current used or remaining
+usage, and always include the concise warning above when the state is
+`less_than_one_percent`. If the user requests raw facts, omit advice.
 
 Use calm planning language. Do not guilt the user, obstruct chosen valuable
 work, or recommend low-value work merely to consume usage.

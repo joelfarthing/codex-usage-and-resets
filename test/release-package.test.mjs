@@ -63,6 +63,7 @@ test("release-candidate package is deterministic and strictly allowlisted", () =
       "scripts/lib/reset-ledger.mjs",
       "skills/cuar/SKILL.md",
       "skills/cuar/agents/openai.yaml",
+      "skills/cuar/references/glossary.md",
     ]) {
       assert.ok(first.entries.includes(`${PACKAGE_ROOT}/${required}`));
     }
